@@ -1,19 +1,14 @@
 package com.oldman.manage.controller.user;
 
+import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.jfinal.aop.Clear;
 import com.jfinal.aop.Inject;
 import com.jfinal.kit.HashKit;
 import com.jfinal.kit.StrKit;
 import com.oldman.manage.common.SystemConst;
-import com.oldman.manage.common.model.SystemRole;
-import com.oldman.manage.common.model.SystemRouter;
-import com.oldman.manage.common.model.SystemUser;
-import com.oldman.manage.common.model.SystemUserRole;
-import com.oldman.manage.service.SystemRoleService;
-import com.oldman.manage.service.SystemRouterService;
-import com.oldman.manage.service.SystemUserRoleService;
-import com.oldman.manage.service.SystemUserService;
+import com.oldman.manage.common.model.*;
+import com.oldman.manage.service.*;
 import com.oldman.manage.utils.Code;
 import com.oldman.manage.utils.GoogleAuthenticator;
 import com.oldman.manage.utils.NormalResponse;
@@ -26,6 +21,7 @@ import io.jboot.web.controller.annotation.RequestMapping;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * @author admin
@@ -44,6 +40,8 @@ public class UserController extends JbootController {
     SystemUserRoleService systemUserRoleService;
     @Inject
     SystemRoleService systemRoleService;
+    @Inject
+    SystemRoleRouterService systemRoleRouterService;
 
     /**
      * 登录
@@ -52,12 +50,12 @@ public class UserController extends JbootController {
      * @param password 密码
      */
     @Clear
-    public void login(String username, String password,String credential) {
+    public void login(String username, String password, String credential) {
         if (StrKit.isBlank(username) || StrKit.isBlank(password)) {
             renderJson(new NormalResponse(Code.ARGUMENT_ERROR, "用户名或密码为空或包含空格"));
             return;
         }
-        if (!StringUtils.isNumeric(credential)){
+        if (!StringUtils.isNumeric(credential)) {
             renderJson(new NormalResponse(Code.ARGUMENT_ERROR, "令牌格式错误或为空"));
             return;
         }
@@ -66,7 +64,7 @@ public class UserController extends JbootController {
         GoogleAuthenticator ga = new GoogleAuthenticator();
         ga.setWindowSize(5);
         boolean result = ga.check_code(SECRET, Long.parseLong(credential), timeMillis);
-        if (!result){
+        if (!result) {
             renderJson(new NormalResponse(Code.ARGUMENT_ERROR, "请输入正确的令牌"));
             return;
         }
@@ -85,11 +83,14 @@ public class UserController extends JbootController {
         systemUser.setLoginDate(new Date());
         systemUser.setLoginIp(getIPAddress());
         systemUser.update();
-        Map<String, String> userMap = new HashMap<>();
+        List<SystemUserRole> systemUserRoles = systemUserRoleService.findListByColumns(Columns.create("user_id", systemUser.getId()));
+        List<Integer> roleIds = systemUserRoles.stream().map(SystemUserRole::getRoleId).collect(Collectors.toList());
+        Map<String, String> userMap = new HashMap<>(16);
         String token = HashKit.generateSalt(16);
         userMap.put("username", username);
         userMap.put("id", systemUser.getId().toString());
         userMap.put("token", token);
+        userMap.put("roleIds", roleIds.toString().substring(1, roleIds.toString().length() - 1));
         redis.setex(SystemConst.ACCESS_TOKEN + username, EXP, token);
         setJwtMap(userMap);
         renderJson(new NormalResponse(Code.SUCCESS));
@@ -99,9 +100,26 @@ public class UserController extends JbootController {
      * 获取菜单列表
      */
     public void getMenu() {
-        List<SystemRouter> oneRouters = systemRouterService.findListByColumns(Columns.create("type", 0).add("pid", 0).add("status", 1), "system_router.rank ASC");
+        List<String> roleIds = Arrays.asList(getJwtParas().get("roleIds").toString().split(","));
+
+        List<JSONObject> allList = new ArrayList<>();
+        roleIds.forEach(rid -> {
+            List<SystemRoleRouter> systemRoleRouters = systemRoleRouterService.findListByColumns(Columns.create("role_id", rid));
+            systemRoleRouters.forEach(systemRoleRouter -> {
+                JSONObject all = new JSONObject();
+                SystemRouter systemRouter = systemRouterService.findFirstByColumns(Columns.create("id", systemRoleRouter.getRouterId()).add("status", 1).add("type", 0).add("pid", 0));
+                if (null == systemRouter) {
+                    return;
+                }
+                all.put("oneRouters",systemRouter);
+                List<SystemRouter> routers = systemRouterService.findListByColumns(Columns.create("pid", systemRouter.getId()).add("status", 1).add("type", 0));
+                all.put("twoRouters",routers);
+                allList.add(all);
+            });
+        });
         List<JSONObject> menuList = new ArrayList<>();
-        oneRouters.forEach((oneRouter) -> {
+        allList.forEach((jsonObject) -> {
+            SystemRouter oneRouter = (SystemRouter)jsonObject.get("oneRouters");
             int id = oneRouter.getId();
             JSONObject oneMenuJson = new JSONObject();
             oneMenuJson.put("id", id);
@@ -109,9 +127,10 @@ public class UserController extends JbootController {
             oneMenuJson.put("name", oneRouter.getPath());
             oneMenuJson.put("icon", oneRouter.getFace());
             oneMenuJson.put("pid", oneRouter.getPid());
-            List<SystemRouter> twoRouters = systemRouterService.findListByColumns(Columns.create("status", 1).add("pid", id), "system_router.rank ASC");
             List<JSONObject> lists = new ArrayList<>();
-            twoRouters.forEach(twoRouter -> {
+            JSONArray twoRouters = jsonObject.getJSONArray("twoRouters");
+            twoRouters.forEach(obj -> {
+                SystemRouter twoRouter = (SystemRouter) obj;
                 JSONObject twoMenuJson = new JSONObject();
                 twoMenuJson.put("id", twoRouter.getId());
                 twoMenuJson.put("title", twoRouter.getName());
