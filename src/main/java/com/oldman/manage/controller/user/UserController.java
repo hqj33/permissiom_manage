@@ -8,6 +8,7 @@ import com.jfinal.kit.HashKit;
 import com.jfinal.kit.StrKit;
 import com.oldman.manage.common.SystemConst;
 import com.oldman.manage.common.model.*;
+import com.oldman.manage.common.modelbase.BaseSystemRouter;
 import com.oldman.manage.service.*;
 import com.oldman.manage.utils.Code;
 import com.oldman.manage.utils.GoogleAuthenticator;
@@ -101,25 +102,37 @@ public class UserController extends JbootController {
      */
     public void getMenu() {
         List<String> roleIds = Arrays.asList(getJwtParas().get("roleIds").toString().split(","));
-
         List<JSONObject> allList = new ArrayList<>();
+        List<Integer> twoIds = new ArrayList<>();
         roleIds.forEach(rid -> {
             List<SystemRoleRouter> systemRoleRouters = systemRoleRouterService.findListByColumns(Columns.create("role_id", rid));
             systemRoleRouters.forEach(systemRoleRouter -> {
                 JSONObject all = new JSONObject();
                 SystemRouter systemRouter = systemRouterService.findFirstByColumns(Columns.create("id", systemRoleRouter.getRouterId()).add("status", 1).add("type", 0).add("pid", 0));
                 if (null == systemRouter) {
+                    twoIds.add(systemRoleRouter.getRouterId());
                     return;
                 }
-                all.put("oneRouters",systemRouter);
-                List<SystemRouter> routers = systemRouterService.findListByColumns(Columns.create("pid", systemRouter.getId()).add("status", 1).add("type", 0));
-                all.put("twoRouters",routers);
+                all.put("id", systemRouter.getId());
+                all.put("rank", systemRouter.getRank());
+                all.put("oneRouters", systemRouter);
                 allList.add(all);
             });
         });
+        allList.forEach(obj -> {
+            List<SystemRouter> twoRouters = systemRouterService.findListByColumns(Columns.create("pid", obj.getInteger("id")).add("status", 1).add("type", 0));
+            List<Integer> collect = twoRouters.stream().map(SystemRouter::getId).collect(Collectors.toList());
+            collect.retainAll(twoIds);
+            if (!obj.getInteger("id").equals(obj.getInteger("id"))) {
+                return;
+            }
+            List<SystemRouter> routers = collect.stream().map(id -> systemRouterService.findById(id)).sorted(Comparator.comparingInt(BaseSystemRouter::getRank)).collect(Collectors.toList());
+            obj.put("twoRouters", routers);
+        });
         List<JSONObject> menuList = new ArrayList<>();
+        allList.sort(Comparator.comparingInt(o -> o.getInteger("rank")));
         allList.forEach((jsonObject) -> {
-            SystemRouter oneRouter = (SystemRouter)jsonObject.get("oneRouters");
+            SystemRouter oneRouter = (SystemRouter) jsonObject.get("oneRouters");
             int id = oneRouter.getId();
             JSONObject oneMenuJson = new JSONObject();
             oneMenuJson.put("id", id);
