@@ -2,6 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="039abf8d-a1ef-43a9-89fa-1d8d671731e6" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/src/main/resources/database/permission_manage.sql" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -117,7 +118,7 @@
       <updated>1580650567974</updated>
       <workItem from="1580650570580" duration="2470000" />
       <workItem from="1580653092310" duration="376000" />
-      <workItem from="1583495905084" duration="7050000" />
+      <workItem from="1583495905084" duration="7290000" />
     </task>
     <task id="LOCAL-00001" summary="修复权限无效问题">
       <created>1583501905012</created>
@@ -133,7 +134,14 @@
       <option name="project" value="LOCAL" />
       <updated>1583559697608</updated>
     </task>
-    <option name="localTasksCounter" value="3" />
+    <task id="LOCAL-00003" summary=".">
+      <created>1583560181838</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1583560181838</updated>
+    </task>
+    <option name="localTasksCounter" value="4" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -154,11 +162,11 @@
       <screen x="1920" y="0" width="1858" height="1080" />
     </state>
     <state x="2303" y="195" key="#com.intellij.execution.impl.EditConfigurationsDialog/0.0.1858.1080/1920.0.1858.1080@1920.0.1858.1080" timestamp="1583495923648" />
-    <state x="502" y="138" key="CommitChangelistDialog2" timestamp="1583559696550">
-      <screen x="0" y="0" width="1858" height="1080" />
+    <state x="2422" y="138" width="1007" height="813" key="CommitChangelistDialog2" timestamp="1583560189979">
+      <screen x="1920" y="0" width="1858" height="1080" />
     </state>
     <state x="502" y="138" key="CommitChangelistDialog2/0.0.1858.1080/1920.0.1858.1080@0.0.1858.1080" timestamp="1583559696550" />
-    <state x="2422" y="138" key="CommitChangelistDialog2/0.0.1858.1080/1920.0.1858.1080@1920.0.1858.1080" timestamp="1583501904098" />
+    <state x="2422" y="138" width="1007" height="813" key="CommitChangelistDialog2/0.0.1858.1080/1920.0.1858.1080@1920.0.1858.1080" timestamp="1583560189979" />
     <state width="775" height="466" key="DebuggerActiveHint" timestamp="1583501702227">
       <screen x="1920" y="0" width="1858" height="1080" />
     </state>
